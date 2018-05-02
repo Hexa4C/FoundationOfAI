@@ -19,7 +19,7 @@ typedef struct Node{
 	int gkey;
 	char **status;
 } *PNode;
-
+/* 
 typedef struct State {
 	char **str;
 	unsigned int hashcode;
@@ -30,7 +30,7 @@ struct HashNode {
 	PState head;
 };
 
-HashNode* HTable = new HashNode[N];
+HashNode* HTable = new HashNode[N]; */
 int row, col;
 
 int parent(int i) {
@@ -98,7 +98,7 @@ void OutputQueue(vector<PNode> &A) {
 		cout << "|" + A[i]->actions + " |" << A[i]->gkey << endl;
 	}
 }
-
+/* 
 bool StatusCompare(char **a, char **b) {
 	for (int i = 0; i < SIZE; i ++) {
 		for (int j = 0; j < SIZE; j++){
@@ -130,6 +130,10 @@ bool InsertHashTable(char **status) {
 	PState p = HTable[index].head, q;
 	if (p == nullptr) {
 		p = new State;
+		if (p == nullptr) {
+			cout << "memory not enough!" << endl;
+			exit(0);
+		}
 		p->str = status;
 		p->hashcode = h;
 	}
@@ -154,6 +158,10 @@ bool InsertHashTable(char **status) {
 				}
 			}
 			PState r = new State;
+			if (r == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			r->str = status;
 			r->hashcode = h;
 			r->next = p;
@@ -161,6 +169,10 @@ bool InsertHashTable(char **status) {
 		}
 		else {
 			PState r = new State;
+			if (r == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			r->str = status;
 			r->hashcode = h;
 			r->next = p;
@@ -177,6 +189,49 @@ void FreeHashTable() {
 			q = p;
 			p = p->next;
 			delete q;
+		}
+	}
+} */
+
+bool IsVisited(string a, char c) {
+	if (c == 'U') {
+		for (size_t i = a.size() - 1; i >= 0; i --) {
+			if (a[i] == 'D') {
+				return true;
+			}
+			else if (a[i] == 'R' || a[i] == 'L') {
+				return false;
+			}
+		}
+	}
+	else if (c == 'D') {
+		for (size_t i = a.size() - 1; i >= 0; i --) {
+			if (a[i] == 'U') {
+				return true;
+			}
+			else if (a[i] == 'R' || a[i] == 'L') {
+				return false;
+			}
+		}
+	}
+	else if (c == 'R') {
+		for (size_t i = a.size() - 1; i >= 0; i --) {
+			if (a[i] == 'L') {
+				return true;
+			}
+			else if (a[i] == 'U' || a[i] == 'D') {
+				return false;
+			}
+		}
+	}
+	else if (c == 'L') {
+		for (size_t i = a.size() - 1; i >= 0; i --) {
+			if (a[i] == 'R') {
+				return true;
+			}
+			else if (a[i] == 'U' || a[i] == 'D') {
+				return false;
+			}
 		}
 	}
 }
@@ -227,13 +282,6 @@ void Move(char **parent, char **child, char s) {
 			child[i][j] = parent[i][j];
 		}
 	}
-	//cout << s << endl;
-/* 	for (int i = 0; i < 5; i ++){
-		for (int j = 0; j < 5; j ++){
-			cout << (int)child[i][j] << " ";
-		}
-		cout << endl;
-	}  */
 	if (s == 'R') {
 		if (child[row][col + 1] == -1) {
 			myswap(child[row][col], child[row][col + 2]);
@@ -270,10 +318,14 @@ PNode Astarh1(char **start, char ** target){
 	}
 
 	newNode = new Node;
+	if (newNode == nullptr) {
+		cout << "memory not enough!" << endl;
+		exit(0);
+	}
 	newNode->actions = "";
 	newNode->status = start;
 	newNode->gkey = 0 + Heuristic(newNode->status, target);
-	InsertHashTable(start);
+	//InsertHashTable(start);
 	InsertNode(Q, newNode);
 	while(!Q.empty()) {
 		PNode rootNode = ExtractMin(Q);
@@ -283,23 +335,36 @@ PNode Astarh1(char **start, char ** target){
 		if(GoalTest(rootNode->status, target)) {
 			cout << "Finish!" << endl;
 			FreeAllNode(Q);
-			FreeHashTable();
+			//FreeHashTable();
 			return rootNode;
 		}
 		LocatChess0(rootNode->status);
 		//cout << "	row:" << row << " col:" << col << endl;
 		if (row < 4 && digits[row + 1][col] != -1) {
 			PNode DNode = new Node;
+			if (DNode == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			DNode->status = new char*[SIZE];
+			if (DNode->status == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			for (int i = 0; i < SIZE; i ++){
 				DNode->status[i] = new char[SIZE];
+				if (DNode->status[i] == nullptr) {
+					cout << "memory not enough!" << endl;
+					exit(0);
+				}
 			}
 			DNode->actions = rootNode->actions + "D";
 			Move(digits, DNode->status, 'D');
 			DNode->gkey = DNode->actions.size() + Heuristic(DNode->status, target);
-			if (InsertHashTable(DNode->status)) {
+			if (!IsVisited(rootNode->actions, 'D')){
+			// if (InsertHashTable(DNode->status)) {
 				InsertNode(Q, DNode);
-			}
+			} 
 			else {
 				delete DNode->status;
 				delete DNode;
@@ -307,14 +372,27 @@ PNode Astarh1(char **start, char ** target){
 		}
 		if (row > 0 && digits[row - 1][col] != -1) {
 			PNode UNode = new Node;
+			if (UNode == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			UNode->status = new char*[SIZE];
+			if (UNode->status == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			for (int i = 0; i < SIZE; i ++){
 				UNode->status[i] = new char[SIZE];
+				if (UNode->status[i] == nullptr) {
+					cout << "memory not enough!" << endl;
+					exit(0);
+				}
 			}
 			UNode->actions = rootNode->actions + "U";
 			Move(digits, UNode->status, 'U');
 			UNode->gkey = UNode->actions.size() + Heuristic(UNode->status, target);
-			if (InsertHashTable(UNode->status)) {
+			if (!IsVisited(rootNode->actions, 'U')){
+			//if (InsertHashTable(UNode->status)) {
 				InsertNode(Q, UNode);
 			}
 			else {
@@ -324,14 +402,27 @@ PNode Astarh1(char **start, char ** target){
 		}
 		if (col < 4) {
 			PNode RNode = new Node;
+			if (RNode == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			RNode->status = new char*[SIZE];
+			if (RNode->status == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			for (int i = 0; i < SIZE; i ++){
 				RNode->status[i] = new char[SIZE];
+				if (RNode->status[i] == nullptr) {
+					cout << "memory not enough!" << endl;
+					exit(0);
+				}
 			}
 			RNode->actions = rootNode->actions + "R";
 			Move(digits, RNode->status, 'R');
 			RNode->gkey = RNode->actions.size() + Heuristic(RNode->status, target);
-			if (InsertHashTable(RNode->status)) {
+			if (!IsVisited(rootNode->actions, 'R')){
+			//if (InsertHashTable(RNode->status)) {
 				InsertNode(Q, RNode);
 			}
 			else {
@@ -341,14 +432,27 @@ PNode Astarh1(char **start, char ** target){
 		}
 		if (col > 0) {
 			PNode LNode = new Node;
+			if (LNode == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			LNode->status = new char*[SIZE];
+			if (LNode->status == nullptr) {
+				cout << "memory not enough!" << endl;
+				exit(0);
+			}
 			for (int i = 0; i < SIZE; i ++){
 				LNode->status[i] = new char[SIZE];
+				if (LNode->status[i] == nullptr) {
+					cout << "memory not enough!" << endl;
+					exit(0);
+				}
 			}
 			LNode->actions = rootNode->actions + "L";
 			Move(digits, LNode->status, 'L');
 			LNode->gkey = LNode->actions.size() + Heuristic(LNode->status, target);
-			if (InsertHashTable(LNode->status)) {
+			if (!IsVisited(rootNode->actions, 'L')){
+			//if (InsertHashTable(LNode->status)) {
 				InsertNode(Q, LNode);
 			}
 			else {
@@ -379,8 +483,16 @@ int main(){
 		}
 	}
 	s = new char*[SIZE];
+	if (s == nullptr) {
+		cout << "memory not enough!" << endl;
+		exit(0);
+	}
 	for (int i = 0; i < SIZE; i ++){
 		s[i] = new char[SIZE];
+		if (s[i] == nullptr) {
+			cout << "memory not enough!" << endl;
+			exit(0);
+		}
 		for (int j = 0; j < SIZE; j ++){
 			s[i][j] = (char)start[i][j];
 		}
@@ -393,8 +505,16 @@ int main(){
 		}
 	}
 	t = new char*[SIZE];
+	if (t == nullptr) {
+		cout << "memory not enough!" << endl;
+		exit(0);
+	}
 	for (int i = 0; i < SIZE; i ++){
 		t[i] = new char[SIZE];
+		if (t[i] == nullptr) {
+			cout << "memory not enough!" << endl;
+			exit(0);
+		}
 		for (int j = 0; j < SIZE; j ++){
 			t[i][j] = (char)target[i][j];
 		}
@@ -406,9 +526,9 @@ int main(){
 		}
 		cout << endl;
 	} */
-	for (int i = 0; i < N; i ++) {
+	/* for (int i = 0; i < N; i ++) {
 		HTable[i].head = nullptr;
-	}
+	} */
 	result = Astarh1(s, t);
 	if (result != nullptr){
 		cout << result->actions << endl;
