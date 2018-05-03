@@ -19,18 +19,7 @@ typedef struct Node{
 	int gkey;
 	char **status;
 } *PNode;
-/* 
-typedef struct State {
-	char **str;
-	unsigned int hashcode;
-	State *next;
-} *PState;
 
-struct HashNode {
-	PState head;
-};
-
-HashNode* HTable = new HashNode[N]; */
 int row, col;
 
 int parent(int i) {
@@ -98,100 +87,6 @@ void OutputQueue(vector<PNode> &A) {
 		cout << "|" + A[i]->actions + " |" << A[i]->gkey << endl;
 	}
 }
-/* 
-bool StatusCompare(char **a, char **b) {
-	for (int i = 0; i < SIZE; i ++) {
-		for (int j = 0; j < SIZE; j++){
-			if (a[i] != b[i])
-			{
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
-unsigned int Hash(char *str)
-{//BKDRHash
-    unsigned int seed = 131; // 31 131 1313 13131 131313 etc..
-    unsigned int hash = 0;
-
-    while (*str)
-    {
-        hash = hash * seed + (*str++);
-    }
-
-    return (hash & 0x7FFFFFFF);
-}
-
-bool InsertHashTable(char **status) {
-	unsigned int h = Hash(status[0]);
-	int index = h % N;
-	PState p = HTable[index].head, q;
-	if (p == nullptr) {
-		p = new State;
-		if (p == nullptr) {
-			cout << "memory not enough!" << endl;
-			exit(0);
-		}
-		p->str = status;
-		p->hashcode = h;
-	}
-	else {
-		if(p->hashcode < h) {
-			q = p;
-			p = p->next;
-			while(p != nullptr) {
-				if (p->hashcode < h) {
-					q = p;
-					p = p->next;
-				}
-				else if (p->hashcode == h) {
-					if(StatusCompare(p->str, status)) {
-						return false;
-					}
-					q = p;
-					p = p->next;
-				}
-				else {
-					break;	
-				}
-			}
-			PState r = new State;
-			if (r == nullptr) {
-				cout << "memory not enough!" << endl;
-				exit(0);
-			}
-			r->str = status;
-			r->hashcode = h;
-			r->next = p;
-			q->next = r;
-		}
-		else {
-			PState r = new State;
-			if (r == nullptr) {
-				cout << "memory not enough!" << endl;
-				exit(0);
-			}
-			r->str = status;
-			r->hashcode = h;
-			r->next = p;
-			HTable[index].head = r;
-		}
-	}
-	return true;
-}
-
-void FreeHashTable() {
-	for (int i = 0; i < N; i ++) {
-		PState p = HTable[i].head, q;
-		while(p != nullptr) {
-			q = p;
-			p = p->next;
-			delete q;
-		}
-	}
-} */
 
 bool IsVisited(string a, char c) {
 	if (c == 'U') {
@@ -260,6 +155,10 @@ int Heuristic(char **digits, char **target) {
 void FreeAllNode(vector<PNode> &Q) {
 	PNode n;
 	for (size_t i = 0; i < Q.size(); i ++) {
+		for (int j = 0; j < SIZE; j ++) {
+			delete Q[i]->status[j];
+		}
+		delete Q[i]->status;
 		delete Q[i];
 	}
 }
@@ -335,7 +234,6 @@ PNode Astarh1(char **start, char ** target){
 		if(GoalTest(rootNode->status, target)) {
 			cout << "Finish!" << endl;
 			FreeAllNode(Q);
-			//FreeHashTable();
 			return rootNode;
 		}
 		LocatChess0(rootNode->status);
@@ -362,7 +260,6 @@ PNode Astarh1(char **start, char ** target){
 			Move(digits, DNode->status, 'D');
 			DNode->gkey = DNode->actions.size() + Heuristic(DNode->status, target);
 			if (!IsVisited(rootNode->actions, 'D')){
-			// if (InsertHashTable(DNode->status)) {
 				InsertNode(Q, DNode);
 			} 
 			else {
@@ -392,7 +289,6 @@ PNode Astarh1(char **start, char ** target){
 			Move(digits, UNode->status, 'U');
 			UNode->gkey = UNode->actions.size() + Heuristic(UNode->status, target);
 			if (!IsVisited(rootNode->actions, 'U')){
-			//if (InsertHashTable(UNode->status)) {
 				InsertNode(Q, UNode);
 			}
 			else {
@@ -422,7 +318,6 @@ PNode Astarh1(char **start, char ** target){
 			Move(digits, RNode->status, 'R');
 			RNode->gkey = RNode->actions.size() + Heuristic(RNode->status, target);
 			if (!IsVisited(rootNode->actions, 'R')){
-			//if (InsertHashTable(RNode->status)) {
 				InsertNode(Q, RNode);
 			}
 			else {
@@ -452,7 +347,6 @@ PNode Astarh1(char **start, char ** target){
 			Move(digits, LNode->status, 'L');
 			LNode->gkey = LNode->actions.size() + Heuristic(LNode->status, target);
 			if (!IsVisited(rootNode->actions, 'L')){
-			//if (InsertHashTable(LNode->status)) {
 				InsertNode(Q, LNode);
 			}
 			else {
@@ -461,6 +355,10 @@ PNode Astarh1(char **start, char ** target){
 			}
 		}
 		//OutputQueue(Q);
+		for (int j = 0; j < SIZE; j ++) {
+			delete rootNode->status[j];
+		}
+		delete rootNode->status;
 		delete rootNode;
 		/* if (cnt == 2) {
 			exit(0);
@@ -520,15 +418,6 @@ int main(){
 		}
 	}
 	fin.close();
-	/* for (int i = 0; i < 5; i ++){
-		for (int j = 0; j < 5; j ++){
-			cout << (int)s[i][j] << " ";
-		}
-		cout << endl;
-	} */
-	/* for (int i = 0; i < N; i ++) {
-		HTable[i].head = nullptr;
-	} */
 	result = Astarh1(s, t);
 	if (result != nullptr){
 		cout << result->actions << endl;
