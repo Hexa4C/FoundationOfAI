@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <ctime>
 
 using std::ifstream;
 using std::ofstream;
@@ -131,14 +132,12 @@ bool IsVisited(string a, char c) {
 	}
 }
 
-bool GoalTest(char **digits, char **target) {
-	for (int i = 0; i < SIZE; i ++) {
-		for (int j = 0; j < SIZE; j ++) {
-			if (digits[i][j] != target[i][j])
-				return false;
-		}
+bool GoalTest(PNode n) {
+	if (n->gkey == n->actions.size()) {
+		return true;
 	}
-	return true;
+	else
+		return false;
 }
 
 int Heuristic(char **digits, char **target) {
@@ -224,20 +223,17 @@ PNode Astarh1(char **start, char ** target){
 	newNode->actions = "";
 	newNode->status = start;
 	newNode->gkey = 0 + Heuristic(newNode->status, target);
-	//InsertHashTable(start);
 	InsertNode(Q, newNode);
 	while(!Q.empty()) {
 		PNode rootNode = ExtractMin(Q);
 		char **digits = rootNode->status;
 		cnt++;
-		//cout << "#" << rootNode->actions;
-		if(GoalTest(rootNode->status, target)) {
+		if(GoalTest(rootNode)) {
 			cout << "Finish!" << endl;
 			FreeAllNode(Q);
 			return rootNode;
 		}
 		LocatChess0(rootNode->status);
-		//cout << "	row:" << row << " col:" << col << endl;
 		if (row < 4 && digits[row + 1][col] != -1) {
 			PNode DNode = new Node;
 			if (DNode == nullptr) {
@@ -263,6 +259,9 @@ PNode Astarh1(char **start, char ** target){
 				InsertNode(Q, DNode);
 			} 
 			else {
+				for (int j = 0; j < SIZE; j ++) {
+					delete DNode->status[j];
+				}
 				delete DNode->status;
 				delete DNode;
 			}
@@ -292,6 +291,9 @@ PNode Astarh1(char **start, char ** target){
 				InsertNode(Q, UNode);
 			}
 			else {
+				for (int j = 0; j < SIZE; j ++) {
+					delete UNode->status[j];
+				}
 				delete UNode->status;
 				delete UNode;
 			}
@@ -321,6 +323,9 @@ PNode Astarh1(char **start, char ** target){
 				InsertNode(Q, RNode);
 			}
 			else {
+				for (int j = 0; j < SIZE; j ++) {
+					delete RNode->status[j];
+				}
 				delete RNode->status;
 				delete RNode;
 			}
@@ -350,6 +355,9 @@ PNode Astarh1(char **start, char ** target){
 				InsertNode(Q, LNode);
 			}
 			else {
+				for (int j = 0; j < SIZE; j ++) {
+					delete LNode->status[j];
+				}
 				delete LNode->status;
 				delete LNode;
 			}
@@ -368,11 +376,14 @@ PNode Astarh1(char **start, char ** target){
 }
 
 int main(){
-	string inputpath = "input/input.txt", targetpath = "input/target.txt";
+	string inputpath = "input/input.txt", targetpath = "input/target.txt", outputpath = "output/output_Ah1.txt";
 	vector<vector<int> > start(5, vector<int>(5, 0)), target(5, vector<int>(5, 0));
 	char **s, **t;
 	PNode result;
 	ifstream fin;
+	ofstream fout;
+	clock_t starttime, finishtime;
+	double totaltime;
 
 	fin.open(inputpath);
 	for (int i = 0; i < 5; i ++){
@@ -418,14 +429,24 @@ int main(){
 		}
 	}
 	fin.close();
+	starttime = clock();
 	result = Astarh1(s, t);
+	finishtime = clock();
+	totaltime = (double)(finishtime-starttime)/CLOCKS_PER_SEC;
+	fout.open(outputpath);
 	if (result != nullptr){
-		cout << result->actions << endl;
+		fout << totaltime << endl;
+		fout << result->actions << endl;
+		fout << result->actions.size() << endl;
 	}
 	else {
 		cout << "no result!" << endl;
 	}
 
+	for (int j = 0; j < SIZE; j ++) {
+		delete result->status[j];
+	}
+	delete result->status;
 	delete result;
 	return 0;
 }
