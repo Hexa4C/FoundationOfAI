@@ -17,7 +17,8 @@ using std::vector;
 
 typedef struct Node{
 	string actions;
-	int gkey;
+	char hkey;
+	char fkey;
 	char **status;
 } *PNode;
 
@@ -67,17 +68,29 @@ void myswap (T &a, T &b) {
 	b = tmp;
 }
 
+bool LessThan(PNode a, PNode b) {
+	if (a->fkey < b->fkey) {
+		return true;
+	}
+	else if(a->fkey == b->fkey && a->hkey < b->hkey) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void MinHeapify(vector<PNode> &A, int i) {
 	int l = left(i);
 	int r = right(i);
 	int smallest;
-	if (l < A.size() && A[l]->gkey < A[i]->gkey) {
+	if (l < A.size() && LessThan(A[l], A[i])) {
 		smallest = l;
 	}
 	else {
 		smallest = i;
 	}
-	if (r < A.size() && A[r]->gkey < A[smallest]->gkey) {
+	if (r < A.size() && LessThan(A[r], A[smallest])) {
 		smallest = r;
 	}
 	if (smallest != i) {
@@ -89,7 +102,7 @@ void MinHeapify(vector<PNode> &A, int i) {
 void InsertNode(vector<PNode> &A, PNode e) {
 	A.push_back(e);
 	int i = A.size() - 1;
-	while (i > 0 && A[parent(i)]->gkey > A[i]->gkey) {
+	while (i > 0 && LessThan(A[i], A[parent(i)])) {
 		myswap(A[i], A[parent(i)]);
 		i = parent(i);
 	}
@@ -107,14 +120,18 @@ PNode ExtractMin(vector<PNode> &A) {
 	return min;
 }
 
-void OutputQueue(vector<PNode> &A) {
-	cout << "Queue" << endl;
+void OutputQueue(ofstream &fout, vector<PNode> &A) {
+	fout << "#Queue#" << endl;
 	for (size_t i = 0; i < A.size(); i ++) {
-		cout << "|" + A[i]->actions + " |" << A[i]->gkey << endl;
+		fout << "|" + A[i]->actions + " |" << A[i]->actions.size() << "|" << A[i]->hkey << "|" << A[i]->actions.size() + A[i]->hkey << "|" << endl;
 	}
+	fout << endl;
 }
 
 bool IsVisited(string a, char c) {
+	if (a.size() == 0) {
+		return false;
+	}
 	if (c == 'U') {
 		for (size_t i = a.size() - 1; i >= 0; i --) {
 			if (a[i] == 'D') {
@@ -155,6 +172,7 @@ bool IsVisited(string a, char c) {
 			}
 		}
 	}
+	return false;
 }
 
 bool GoalTest(char **digits, char **target) {
@@ -172,15 +190,6 @@ int Heuristic(char **digits, char **target) {
 	int h = 0, count = 0;
 	for (int i = 0; i < SIZE; i ++) {
 		for (int j = 0; j < SIZE; j ++) {
-			/* if (digits[i][j] > 0){
-				int tmp = HTable[digits[i][j]][i][j];
-				if (tmp >= 2) {
-					h += tmp - 2;
-				}
-				else {
-					h += tmp;
-				}
-			} */
 			if (digits[i][j] >= 0){
 				int tmp = HTable[digits[i][j]][i][j];
 				h += tmp;
@@ -244,10 +253,12 @@ void Move(char **parent, char **child, char s) {
 	}
 }
 
-PNode Astarh1(char **start, char ** target){
+PNode Astarh2(char **start, char ** target){
 	vector<PNode> Q;
 	PNode newNode;
 	int cnt = 0;
+	/* ofstream f1;
+	f1.open("procedure1.txt"); */
 
 	LocatChess0(start);
 	if(row == -1) {
@@ -262,19 +273,22 @@ PNode Astarh1(char **start, char ** target){
 	}
 	newNode->actions = "";
 	newNode->status = start;
-	newNode->gkey = 0 + Heuristic(newNode->status, target);
+	newNode->hkey = Heuristic(newNode->status, target);
+	newNode->fkey = newNode->hkey;
 	InsertNode(Q, newNode);
 	while(!Q.empty()) {
 		PNode rootNode = ExtractMin(Q);
 		char **digits = rootNode->status;
+		char last_dir = rootNode->actions[rootNode->actions.size() - 1];
 		cnt++;
-		if(GoalTest(digits, target)) {
+		if(GoalTest(rootNode->status, target)) {
 			cout << "Finish!" << endl;
 			FreeAllNode(Q);
+			//f1.close();
 			return rootNode;
 		}
 		LocatChess0(rootNode->status);
-		if (row < 4 && digits[row + 1][col] != -1) {
+		if (row < 4 && digits[row + 1][col] != -1 && last_dir != 'U') {//D
 			PNode DNode = new Node;
 			if (DNode == nullptr) {
 				cout << "memory not enough!" << endl;
@@ -294,19 +308,11 @@ PNode Astarh1(char **start, char ** target){
 			}
 			DNode->actions = rootNode->actions + "D";
 			Move(digits, DNode->status, 'D');
-			DNode->gkey = DNode->actions.size() + Heuristic(DNode->status, target);
-			if (!IsVisited(rootNode->actions, 'D')){
-				InsertNode(Q, DNode);
-			} 
-			else {
-				for (int j = 0; j < SIZE; j ++) {
-					delete DNode->status[j];
-				}
-				delete DNode->status;
-				delete DNode;
-			}
+			DNode->hkey = Heuristic(DNode->status, target);
+			DNode->fkey = DNode->hkey + DNode->actions.size();
+			InsertNode(Q, DNode);
 		}
-		if (row > 0 && digits[row - 1][col] != -1) {
+		if (row > 0 && digits[row - 1][col] != -1 && last_dir != 'D') {//U
 			PNode UNode = new Node;
 			if (UNode == nullptr) {
 				cout << "memory not enough!" << endl;
@@ -326,19 +332,11 @@ PNode Astarh1(char **start, char ** target){
 			}
 			UNode->actions = rootNode->actions + "U";
 			Move(digits, UNode->status, 'U');
-			UNode->gkey = UNode->actions.size() + Heuristic(UNode->status, target);
-			if (!IsVisited(rootNode->actions, 'U')){
-				InsertNode(Q, UNode);
-			}
-			else {
-				for (int j = 0; j < SIZE; j ++) {
-					delete UNode->status[j];
-				}
-				delete UNode->status;
-				delete UNode;
-			}
+			UNode->hkey = Heuristic(UNode->status, target);
+			UNode->fkey = UNode->hkey + UNode->actions.size();
+			InsertNode(Q, UNode);
 		}
-		if (col < 4) {
+		if (col < 4 && last_dir != 'L') {//R
 			PNode RNode = new Node;
 			if (RNode == nullptr) {
 				cout << "memory not enough!" << endl;
@@ -358,19 +356,11 @@ PNode Astarh1(char **start, char ** target){
 			}
 			RNode->actions = rootNode->actions + "R";
 			Move(digits, RNode->status, 'R');
-			RNode->gkey = RNode->actions.size() + Heuristic(RNode->status, target);
-			if (!IsVisited(rootNode->actions, 'R')){
-				InsertNode(Q, RNode);
-			}
-			else {
-				for (int j = 0; j < SIZE; j ++) {
-					delete RNode->status[j];
-				}
-				delete RNode->status;
-				delete RNode;
-			}
+			RNode->hkey = Heuristic(RNode->status, target);
+			RNode->fkey = RNode->hkey + RNode->actions.size();
+			InsertNode(Q, RNode);
 		}
-		if (col > 0) {
+		if (col > 0 && last_dir != 'R') {//L
 			PNode LNode = new Node;
 			if (LNode == nullptr) {
 				cout << "memory not enough!" << endl;
@@ -390,30 +380,20 @@ PNode Astarh1(char **start, char ** target){
 			}
 			LNode->actions = rootNode->actions + "L";
 			Move(digits, LNode->status, 'L');
-			LNode->gkey = LNode->actions.size() + Heuristic(LNode->status, target);
-			if (!IsVisited(rootNode->actions, 'L')){
-				InsertNode(Q, LNode);
-			}
-			else {
-				for (int j = 0; j < SIZE; j ++) {
-					delete LNode->status[j];
-				}
-				delete LNode->status;
-				delete LNode;
-			}
+			LNode->hkey = Heuristic(LNode->status, target);
+			LNode->fkey = LNode->hkey + LNode->actions.size();
+			InsertNode(Q, LNode);
 		}
-		//OutputQueue(Q);
+		//OutputQueue(f1, Q);
 		for (int j = 0; j < SIZE; j ++) {
 			delete rootNode->status[j];
 		}
 		delete rootNode->status;
 		delete rootNode;
-		/* if (cnt == 2) {
-			exit(0);
-		} */
 	}
 	return nullptr;
 }
+
 
 int main(){
 	string inputpath = "input/input.txt", targetpath = "input/target.txt", outputpath = "output/output_Ah2.txt";
@@ -470,7 +450,7 @@ int main(){
 	}
 	fin.close();
 	starttime = clock();
-	result = Astarh1(s, t);
+	result = Astarh2(s, t);
 	finishtime = clock();
 	totaltime = (double)(finishtime-starttime)/CLOCKS_PER_SEC;
 	fout.open(outputpath);
@@ -478,15 +458,15 @@ int main(){
 		fout << totaltime << endl;
 		fout << result->actions << endl;
 		fout << result->actions.size() << endl;
+		for (int j = 0; j < SIZE; j ++) {
+			delete result->status[j];
+		}
+		delete result->status;
+		delete result;
 	}
 	else {
 		cout << "no result!" << endl;
 	}
 
-	for (int j = 0; j < SIZE; j ++) {
-		delete result->status[j];
-	}
-	delete result->status;
-	delete result;
 	return 0;
 }
