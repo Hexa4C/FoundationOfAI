@@ -278,13 +278,13 @@ void MoveChess(vector<int> &Node, int loc, int newrow, int newcol, int N) {
 
 bool SimAnn(vector<int> &Node, int N, int M) {
 	int t = 0;
-	double schedule = N * N;
+	double schedule = 1;
 
 	RandStart(Node, N);
 	int curr_attack = AttackCnt(Node, N, M);
 	int curr_eval = abs(curr_attack - M);
 	while (1) {
-		schedule = schedule * 0.9999;
+		schedule = schedule * 0.99999;
 		if (schedule == 0) {
 			return false;
 		}
@@ -295,39 +295,81 @@ bool SimAnn(vector<int> &Node, int N, int M) {
 		int abdiag = arow + acol;
 		int minrow, mincol;
 		int min_eval = INF;
-		for (int j = 0; j < N; j ++) {//行上移动
-			if (j == acol) {
-				continue;
+		if (N <= 20) {
+			for (int j = 0; j < N; j ++) {//行上移动
+				if (j == acol) {
+					continue;
+				}
+				if (! QueenOccupied(arow, j, N)) {
+					int newmdiag = N + j - arow - 1;
+					int newbdiag = arow + j;
+					int eval_diff = 0;
+					eval_diff += (Couples(colqnum[j] + 1) + Couples(colqnum[acol] - 1) - Couples(colqnum[j]) - Couples(colqnum[acol]));
+					eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+					eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+					if (abs(curr_attack + eval_diff - M) < min_eval) {
+						min_eval = abs(curr_attack + eval_diff - M);
+						minrow = arow;
+						mincol = j;
+					}
+				}
 			}
-			if (! QueenOccupied(arow, j, N)) {
-				int newmdiag = N + j - arow - 1;
-				int newbdiag = arow + j;
-				int eval_diff = 0;
-				eval_diff += (Couples(colqnum[j] + 1) + Couples(colqnum[acol] - 1) - Couples(colqnum[j]) - Couples(colqnum[acol]));
-				eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
-				eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
-				if (abs(curr_attack + eval_diff - M) < min_eval) {
-					min_eval = abs(curr_attack + eval_diff - M);
-					minrow = arow;
-					mincol = j;
+			for (int j = 0; j < N; j ++) {//列上移动
+				if (j == arow) {
+					continue;
+				}
+				if (! QueenOccupied(j, acol, N)) {
+					int newmdiag = N + acol - j - 1;
+					int newbdiag = acol + j;
+					int eval_diff = 0;
+					eval_diff += (Couples(rowqnum[j] + 1) + Couples(rowqnum[arow] - 1) - Couples(rowqnum[j]) - Couples(rowqnum[arow]));
+					eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+					eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+					if (abs(curr_attack + eval_diff - M) < min_eval) {
+						min_eval = abs(curr_attack + eval_diff - M);
+						minrow = j;
+						mincol = acol;
+					}
 				}
 			}
 		}
-		for (int j = 0; j < N; j ++) {//列上移动
-			if (j == arow) {
-				continue;
+		else {
+			for (int k = 0; k < 40; k ++) {//行上移动
+				int j = (int)rand() % N;
+				if (j == acol) {
+					continue;
+				}
+				if (! QueenOccupied(arow, j, N)) {
+					int newmdiag = N + j - arow - 1;
+					int newbdiag = arow + j;
+					int eval_diff = 0;
+					eval_diff += (Couples(colqnum[j] + 1) + Couples(colqnum[acol] - 1) - Couples(colqnum[j]) - Couples(colqnum[acol]));
+					eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+					eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+					if (abs(curr_attack + eval_diff - M) < min_eval) {
+						min_eval = abs(curr_attack + eval_diff - M);
+						minrow = arow;
+						mincol = j;
+					}
+				}
 			}
-			if (! QueenOccupied(j, acol, N)) {
-				int newmdiag = N + acol - j - 1;
-				int newbdiag = acol + j;
-				int eval_diff = 0;
-				eval_diff += (Couples(rowqnum[j] + 1) + Couples(rowqnum[arow] - 1) - Couples(rowqnum[j]) - Couples(rowqnum[arow]));
-				eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
-				eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
-				if (abs(curr_attack + eval_diff - M) < min_eval) {
-					min_eval = abs(curr_attack + eval_diff - M);
-					minrow = j;
-					mincol = acol;
+			for (int k = 0; k < 40; k ++) {//列上移动
+				int j = (int)rand() % N;
+				if (j == arow) {
+					continue;
+				}
+				if (! QueenOccupied(j, acol, N)) {
+					int newmdiag = N + acol - j - 1;
+					int newbdiag = acol + j;
+					int eval_diff = 0;
+					eval_diff += (Couples(rowqnum[j] + 1) + Couples(rowqnum[arow] - 1) - Couples(rowqnum[j]) - Couples(rowqnum[arow]));
+					eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+					eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+					if (abs(curr_attack + eval_diff - M) < min_eval) {
+						min_eval = abs(curr_attack + eval_diff - M);
+						minrow = j;
+						mincol = acol;
+					}
 				}
 			}
 		}

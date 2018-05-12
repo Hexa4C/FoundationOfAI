@@ -1,7 +1,6 @@
 #include<iostream>
 #include<fstream>
 #include<cstdlib>
-#include<cmath>
 #include<ctime>
 #include<vector>
 #include<string>
@@ -15,7 +14,6 @@ using std::string;
 using std::vector;
 
 #define INF 0x7fffffff
-#define MAX 1000000
 
 typedef struct QNode {
 	int row;
@@ -276,96 +274,141 @@ void MoveChess(vector<int> &Node, int loc, int newrow, int newcol, int N) {
 	}
 }
 
-bool SimAnn(vector<int> &Node, int N, int M) {
-	int t = 0;
-	double schedule = N * N;
+bool RRHC(vector<int> &Node, int N, int M) {
+	int cnt = 100;
+	int side = 10;
 
-	RandStart(Node, N);
-	int curr_attack = AttackCnt(Node, N, M);
-	int curr_eval = abs(curr_attack - M);
-	while (1) {
-		schedule = schedule * 0.9999;
-		if (schedule == 0) {
-			return false;
-		}
-		int loc = (int)rand() % N;
-		int arow = Node[2 * loc];
-		int acol = Node[2 * loc + 1];
-		int amdiag = N + acol - arow - 1;
-		int abdiag = arow + acol;
-		int minrow, mincol;
-		int min_eval = INF;
-		for (int j = 0; j < N; j ++) {//行上移动
-			if (j == acol) {
-				continue;
-			}
-			if (! QueenOccupied(arow, j, N)) {
-				int newmdiag = N + j - arow - 1;
-				int newbdiag = arow + j;
-				int eval_diff = 0;
-				eval_diff += (Couples(colqnum[j] + 1) + Couples(colqnum[acol] - 1) - Couples(colqnum[j]) - Couples(colqnum[acol]));
-				eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
-				eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
-				if (abs(curr_attack + eval_diff - M) < min_eval) {
-					min_eval = abs(curr_attack + eval_diff - M);
-					minrow = arow;
-					mincol = j;
+	while (cnt > 0) {
+		RandStart(Node, N);
+		int curr_attack = AttackCnt(Node, N, M);
+		int curr_eval = abs(curr_attack - M);
+		int sidecnt = side;
+		while (1) {
+			int minrow = 0, mincol = 0, minloc = 0;
+			int min_eval = INF;
+			if (N < 500) {
+				for (int i = 0; i < N; i ++) {
+					int arow = Node[2 * i];
+					int acol = Node[2 * i + 1];
+					int amdiag = N + acol - arow - 1;
+					int abdiag = arow + acol;
+					for (int j = 0; j < N; j ++) {//行上移动
+						if (j == acol) {
+							continue;
+						}
+						if (! QueenOccupied(arow, j, N)) {
+							int newmdiag = N + j - arow - 1;
+							int newbdiag = arow + j;
+							int eval_diff = 0;
+							eval_diff += (Couples(colqnum[j] + 1) + Couples(colqnum[acol] - 1) - Couples(colqnum[j]) - Couples(colqnum[acol]));
+							eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+							eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+							if (abs(curr_attack + eval_diff - M) < min_eval) {
+								min_eval = abs(curr_attack + eval_diff - M);
+								minloc = i;
+								minrow = arow;
+								mincol = j;
+							}
+						}
+					}
+					for (int j = 0; j < N; j ++) {//列上移动
+						if (j == arow) {
+							continue;
+						}
+						if (! QueenOccupied(j, acol, N)) {
+							int newmdiag = N + acol - j - 1;
+							int newbdiag = acol + j;
+							int eval_diff = 0;
+							eval_diff += (Couples(rowqnum[j] + 1) + Couples(rowqnum[arow] - 1) - Couples(rowqnum[j]) - Couples(rowqnum[arow]));
+							eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+							eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+							if (abs(curr_attack + eval_diff - M) < min_eval) {
+								min_eval = abs(curr_attack + eval_diff - M);
+								minloc = i;
+								minrow = j;
+								mincol = acol;
+							}
+						}
+					}
 				}
-			}
-		}
-		for (int j = 0; j < N; j ++) {//列上移动
-			if (j == arow) {
-				continue;
-			}
-			if (! QueenOccupied(j, acol, N)) {
-				int newmdiag = N + acol - j - 1;
-				int newbdiag = acol + j;
-				int eval_diff = 0;
-				eval_diff += (Couples(rowqnum[j] + 1) + Couples(rowqnum[arow] - 1) - Couples(rowqnum[j]) - Couples(rowqnum[arow]));
-				eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
-				eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
-				if (abs(curr_attack + eval_diff - M) < min_eval) {
-					min_eval = abs(curr_attack + eval_diff - M);
-					minrow = j;
-					mincol = acol;
-				}
-			}
-		}
-		bool tag = false;
-		if (min_eval < curr_eval) {
-			tag = true;
-		}
-		else {
-			double prob;
-			prob = exp((double)(curr_eval - min_eval) / schedule);
-			long long randnum = ((int)rand() % INF) << 15 + (int)rand() % INF;
-			double randvalue = 1.0 / randnum;
-			if ( randvalue < prob) {
-				tag = true;
 			}
 			else {
-				tag = false;
+				for (int k = 0; k < 100; k ++) {
+					int i = (int)rand() % N;
+					int arow = Node[2 * i];
+					int acol = Node[2 * i + 1];
+					int amdiag = N + acol - arow - 1;
+					int abdiag = arow + acol;
+					for (int l = 0; l < 10; l ++) {//行上移动
+						int j = (int)rand() % N;
+						if (j == acol) {
+							continue;
+						}
+						if (! QueenOccupied(arow, j, N)) {
+							int newmdiag = N + j - arow - 1;
+							int newbdiag = arow + j;
+							int eval_diff = 0;
+							eval_diff += (Couples(colqnum[j] + 1) + Couples(colqnum[acol] - 1) - Couples(colqnum[j]) - Couples(colqnum[acol]));
+							eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+							eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+							if (abs(curr_attack + eval_diff - M) < min_eval) {
+								min_eval = abs(curr_attack + eval_diff - M);
+								minloc = i;
+								minrow = arow;
+								mincol = j;
+							}
+						}
+					}
+					for (int l = 0; l < 10; l ++) {//列上移动
+						int j = (int)rand() % N;
+						if (j == arow) {
+							continue;
+						}
+						if (! QueenOccupied(j, acol, N)) {
+							int newmdiag = N + acol - j - 1;
+							int newbdiag = acol + j;
+							int eval_diff = 0;
+							eval_diff += (Couples(rowqnum[j] + 1) + Couples(rowqnum[arow] - 1) - Couples(rowqnum[j]) - Couples(rowqnum[arow]));
+							eval_diff += (Couples(mdiagqnum[newmdiag] + 1) + Couples(mdiagqnum[amdiag] - 1) - Couples(mdiagqnum[amdiag]) - Couples(mdiagqnum[newmdiag]));
+							eval_diff += (Couples(bdiagqnum[newbdiag] + 1) + Couples(bdiagqnum[abdiag] - 1) - Couples(bdiagqnum[abdiag]) - Couples(bdiagqnum[newbdiag]));
+							if (abs(curr_attack + eval_diff - M) < min_eval) {
+								min_eval = abs(curr_attack + eval_diff - M);
+								minloc = i;
+								minrow = j;
+								mincol = acol;
+							}
+						}
+					}
+				}
 			}
-		}
-		if (tag) {
-			MoveChess(Node, loc, minrow, mincol, N);
-			curr_attack = AttackCnt(Node, N, M);
-			curr_eval = min_eval;
-		}
-		else {
-			continue;
+			if (min_eval < curr_eval) {
+				MoveChess(Node, minloc, minrow, mincol, N);
+				curr_attack = AttackCnt(Node, N, M);
+				curr_eval = min_eval;
+				sidecnt = side;
+			}
+			else if (min_eval == curr_eval && sidecnt > 0) {
+				sidecnt--;
+				MoveChess(Node, minloc, minrow, mincol, N);
+				curr_attack = AttackCnt(Node, N, M);
+				curr_eval = min_eval;
+			}
+			else {
+				MoveChess(Node, minloc, minrow, mincol, N);
+				break;
+			}
 		}
 		if (curr_attack == M) {
 			return true;
 		}
-		t++;
+		cnt--;
+		FreeTables(N);
 	}
-	FreeTables(N);
 	return false;
 }
 
 int main(){
-	string inputpath = "input/input.txt", outputpath = "output/output_simulated_annealing.txt";
+	string inputpath = "input/input.txt", outputpath = "output/output_hill_climbing.txt";
 	int N, M;
 	ifstream fin;
 	ofstream fout;
@@ -377,7 +420,7 @@ int main(){
 	fin.close();
 	vector<int> Node(2 * N, 0);
 	starttime = clock();
-	bool tag = SimAnn(Node, N, M);
+	bool tag = RRHC(Node, N, M);
 	finishtime = clock();
 	totaltime = (double)(finishtime-starttime)/(CLOCKS_PER_SEC / 1000);
 	if (tag) {
